@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write   # needed to create a GitHub release
+  id-token: write   # needed for PyPI trusted publishing (OIDC)
+
+jobs:
+  # ------------------------------------------------------------------ gate ---
+  gate:
+    name: "Quality gate"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv pip install -e '.[dev]' --system
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Type-check (mypy)
+        run: uv run mypy src
+
+      - name: Test (pytest)
+        run: uv run pytest
+
+  # ----------------------------------------------------------------- build ---
+  build:
+    name: "Build distribution"
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel + sdist
+        run: uv build
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # --------------------------------------------------------------- release ---
+  github-release:
+    name: "Create GitHub release"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "kosovopay ${{ github.ref_name }}" \
+            --generate-notes \
+            dist/*
+
+  # ----------------------------------------------------------------- pypi ---
+  pypi-publish:
+    name: "Publish to PyPI (trusted publishing)"
+    needs: build
+    runs-on: ubuntu-latest
+    # Only runs when the PyPI environment is configured; silently skipped otherwise.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/kosovopay
+    # Guard: if the environment or OIDC trust isn't set up this job is skipped,
+    # so a tag push never fails just because PyPI publishing isn't configured.
+    if: ${{ vars.PYPI_PUBLISH == 'true' }}
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
