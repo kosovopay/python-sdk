@@ -335,4 +335,6 @@ annotated and compatible with mypy strict mode.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+**KosovoPay License 1.0** — free to use, including commercially, at no charge.
+Modifying, forking, redistributing, or reverse-engineering the SDK is **not**
+permitted; it is maintained solely by KosovoPay. See [LICENSE](LICENSE).
