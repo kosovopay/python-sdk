@@ -24,11 +24,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
-      - name: Create environment
-        run: uv venv --python ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: uv pip install -e '.[dev]'
+      - name: Sync dependencies
+        run: uv sync --extra dev --python ${{ matrix.python-version }}
 
       - name: Lint (ruff)
         run: uv run ruff check .

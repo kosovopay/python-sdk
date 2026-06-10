@@ -23,11 +23,8 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Create environment
-        run: uv venv --python 3.12
-
-      - name: Install dependencies
-        run: uv pip install -e '.[dev]'
+      - name: Sync dependencies
+        run: uv sync --extra dev --python 3.12
 
       - name: Lint (ruff)
         run: uv run ruff check .
