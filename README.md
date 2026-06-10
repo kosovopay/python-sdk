@@ -2,6 +2,8 @@
 
 Official Python client for the [KosovoPay](https://kosovo.sh) payment API.
 
+📖 **API reference:** https://pay.kosovo.sh/docs
+
 ## Installation
 
 ```bash
